@@ -2,8 +2,35 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="Mentiz Launcher" Height="600" Width="900">
+        Title="Mentiz Launcher" Height="720" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        Background="#0f0f10">
     <Grid>
+        <!-- Loading Overlay -->
+        <Grid Name="loadingOverlay" Background="#0f0f10" ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border Width="80" Height="80" CornerRadius="20" 
+                        BorderBrush="#00ffa3" BorderThickness="3"
+                        HorizontalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#00ffa3" BlurRadius="20" ShadowDepth="0"/>
+                    </Border.Effect>
+                    <Image Source="https://api.modrinth.com/api/v1/tag/game" 
+                           Stretch="Uniform" Margin="15"
+                           Opacity="0.8"/>
+                </Border>
+                <TextBlock Text="Mentiz Launcher" FontSize="28" FontWeight="Bold" 
+                           Foreground="#ffffff" HorizontalAlignment="Center" 
+                           Margin="0,30,0,10"/>
+                <TextBlock Name="loadingText" Text="Загрузка..." FontSize="16" 
+                           Foreground="#71717a" HorizontalAlignment="Center"/>
+                <ProgressBar Width="300" Height="6" Margin="0,20,0,0" 
+                            IsIndeterminate="True" 
+                            Foreground="#00ffa3" 
+                            Background="#27272a"/>
+            </StackPanel>
+        </Grid>
+        
         <wv2:WebView2 Name="webView" />
     </Grid>
 </Window>

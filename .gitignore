@@ -1,5 +1,27 @@
 ```
-# Directories
-complete/
-complete-fixed/
+# Build outputs
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.userprefs
+
+# Dependencies
+packages/
+
+# Logs
+*.log
+
+# User-specific files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Environment specific settings
+.env
+.env.local
+*.local
 ```

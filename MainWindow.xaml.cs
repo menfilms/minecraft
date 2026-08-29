@@ -27,13 +27,37 @@ namespace Launcher
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await webView.EnsureCoreWebView2Async();
-            webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
-            webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+            // Показываем экран загрузки
+            loadingOverlay.Visibility = Visibility.Visible;
+            loadingText.Text = "Инициализация WebView2...";
+            
+            try
+            {
+                await webView.EnsureCoreWebView2Async();
+                
+                loadingText.Text = "Загрузка интерфейса...";
+                
+                webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
+                webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
 
-            string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "index.html");
-            if (File.Exists(htmlPath))
-                webView.Source = new Uri(htmlPath);
+                string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "index.html");
+                if (File.Exists(htmlPath))
+                    webView.Source = new Uri(htmlPath);
+                
+                // Скрываем экран загрузки после полной загрузки страницы
+                webView.NavigationCompleted += (s, args) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        loadingOverlay.Visibility = Visibility.Collapsed;
+                    });
+                };
+            }
+            catch (Exception ex)
+            {
+                loadingText.Text = $"Ошибка: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"[ERR] Load: {ex.Message}");
+            }
         }
 
         private async void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
