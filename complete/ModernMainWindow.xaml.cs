@@ -1,6 +1,9 @@
-﻿using System.IO;
+using System;
+using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using CmlLib.Core;
@@ -9,13 +12,14 @@ using CmlLib.Core.ProcessBuilder;
 
 namespace Launcher
 {
-    public partial class MainWindow : Window
+    public partial class ModernMainWindow : Window
     {
         private MSession? session;
         private ModrinthClient modrinthClient;
         private string instancesPath;
+        private bool isMaximized = false;
 
-        public MainWindow()
+        public ModernMainWindow()
         {
             InitializeComponent();
             Loaded += MainWindow_Loaded;
@@ -25,38 +29,118 @@ namespace Launcher
             Directory.CreateDirectory(instancesPath);
         }
 
+        // Обработчики кнопок управления окном
+        private void MinimizeClick(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeClick(object sender, RoutedEventArgs e)
+        {
+            if (isMaximized)
+            {
+                this.WindowState = WindowState.Normal;
+                isMaximized = false;
+            }
+            else
+            {
+                this.WindowState = WindowState.Maximized;
+                isMaximized = true;
+            }
+        }
+
+        private void CloseClick(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        // Перетаскивание окна
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            if (e.GetPosition(this).Y < 50) // Только если кликнули в верхней области
+            {
+                this.DragMove();
+            }
+        }
+
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Показываем экран загрузки
-            loadingOverlay.Visibility = Visibility.Visible;
-            loadingText.Text = "Инициализация WebView2...";
-            
             try
             {
+                // Показываем экран загрузки с анимацией
+                loadingOverlay.Visibility = Visibility.Visible;
+                loadingText.Text = "Запуск лаунчера...";
+                
+                // Запускаем анимацию
+                var storyboard = (Storyboard)loadingOverlay.FindResource("LoadingAnimation");
+                storyboard?.Begin();
+
+                await Task.Delay(500); // Небольшая задержка для плавности
+                
+                loadingText.Text = "Инициализация WebView2...";
                 await webView.EnsureCoreWebView2Async();
                 
-                loadingText.Text = "Загрузка интерфейса...";
+                loadingText.Text = "Загрузка современного интерфейса...";
                 
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
                 webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
 
-                string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "index.html");
-                if (File.Exists(htmlPath))
-                    webView.Source = new Uri(htmlPath);
-                
-                // Скрываем экран загрузки после полной загрузки страницы
-                webView.NavigationCompleted += (s, args) =>
+                string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "complete", "ModernIndex.html");
+                if (!File.Exists(htmlPath))
                 {
-                    Dispatcher.Invoke(() =>
+                    htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "index.html");
+                }
+                
+                if (File.Exists(htmlPath))
+                {
+                    loadingText.Text = "Инициализация компонентов...";
+                    await Task.Delay(300);
+                    
+                    webView.Source = new Uri(htmlPath);
+                    
+                    // Скрываем экран загрузки после полной загрузки страницы
+                    webView.NavigationCompleted += async (s, args) =>
                     {
-                        loadingOverlay.Visibility = Visibility.Collapsed;
-                    });
-                };
+                        await Task.Delay(500); // Небольшая задержка для плавности
+                        
+                        Dispatcher.Invoke(() =>
+                        {
+                            var fadeOutStoryboard = new Storyboard();
+                            var fadeOutAnimation = new DoubleAnimation
+                            {
+                                From = 1.0,
+                                To = 0.0,
+                                Duration = TimeSpan.FromMilliseconds(400)
+                            };
+                            
+                            Storyboard.SetTarget(fadeOutAnimation, loadingOverlay);
+                            Storyboard.SetTargetProperty(fadeOutAnimation, 
+                                new PropertyPath(UIElement.OpacityProperty));
+                            
+                            fadeOutStoryboard.Children.Add(fadeOutAnimation);
+                            fadeOutStoryboard.Completed += (sender, e) =>
+                            {
+                                loadingOverlay.Visibility = Visibility.Collapsed;
+                            };
+                            
+                            fadeOutStoryboard.Begin();
+                        });
+                    };
+                }
+                else
+                {
+                    loadingText.Text = "Ошибка: Файл интерфейса не найден!";
+                    await Task.Delay(2000);
+                }
             }
             catch (Exception ex)
             {
-                loadingText.Text = $"Ошибка: {ex.Message}";
+                loadingText.Text = $"Критическая ошибка: {ex.Message}";
                 System.Diagnostics.Debug.WriteLine($"[ERR] Load: {ex.Message}");
+                
+                MessageBox.Show($"Произошла ошибка при запуске:\n{ex.Message}", 
+                    "Ошибка запуска", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -71,6 +155,7 @@ namespace Launcher
                 {
                     session = MSession.CreateOfflineSession(msg.Substring(6));
                     await webView.CoreWebView2.ExecuteScriptAsync($"onAuthSuccess('{session.Username}')");
+                    UpdateStatus($"Пользователь: {session.Username}");
                 }
                 else if (msg.StartsWith("launch:"))
                 {
@@ -126,6 +211,14 @@ namespace Launcher
             }
         }
 
+        private void UpdateStatus(string status)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                statusText.Text = status;
+            });
+        }
+
         private async Task GetInstances()
         {
             var instances = new List<object>();
@@ -171,6 +264,8 @@ namespace Launcher
 
             var json = JsonSerializer.Serialize(new { type = "instance_created" });
             webView.CoreWebView2.PostWebMessageAsJson(json);
+            
+            UpdateStatus($"Создан инстанс: {name}");
         }
 
         private async Task DeleteInstance(string name)
@@ -180,6 +275,7 @@ namespace Launcher
             {
                 Directory.Delete(path, true);
                 await GetInstances();
+                UpdateStatus($"Удален инстанс: {name}");
             }
         }
 
@@ -198,10 +294,8 @@ namespace Launcher
                         var fileName = Path.GetFileName(file);
                         var isDisabled = ext == ".disabled";
 
-                        // Пытаемся извлечь project_id из имени файла
-                        // Формат имени от Modrinth обычно: [modname]-[version].jar
                         var nameWithoutExt = Path.GetFileNameWithoutExtension(file);
-                        var projectId = nameWithoutExt; // Используем имя как ID
+                        var projectId = nameWithoutExt;
 
                         mods.Add(new
                         {
@@ -240,13 +334,13 @@ namespace Launcher
                 File.Delete(filePath);
             }
 
-            // Отправляем уведомление об удалении
             var json = JsonSerializer.Serialize(new { type = "mod_deleted", projectId = filename });
             webView.CoreWebView2.PostWebMessageAsJson(json);
 
-            // Обновляем список установленных модов
             await GetInstalledMods(instanceName);
             await GetInstances();
+            
+            UpdateStatus($"Мод удален: {filename}");
         }
 
         private async Task ToggleMod(string instanceName, string filename, bool enable)
@@ -258,7 +352,6 @@ namespace Launcher
 
             if (enable)
             {
-                // Включаем: переименовываем .disabled в .jar
                 if (filename.EndsWith(".disabled"))
                 {
                     var newFileName = filename.Replace(".disabled", ".jar");
@@ -268,7 +361,6 @@ namespace Launcher
             }
             else
             {
-                // Отключаем: переименовываем .jar в .disabled
                 if (filename.EndsWith(".jar"))
                 {
                     var newFileName = filename.Replace(".jar", ".disabled");
@@ -319,9 +411,10 @@ namespace Launcher
                 var modsPath = Path.Combine(instancesPath, instanceName, "mods");
                 Directory.CreateDirectory(modsPath);
 
-                // Сохраняем с project_id в имени для идентификации
                 var savePath = Path.Combine(modsPath, $"{projectId}-{file.Filename}");
 
+                UpdateStatus($"Загрузка мода: {file.Filename}");
+                
                 await modrinthClient.DownloadModWithProgressAsync(file.Url, savePath, projectId,
                     (progress) => {
                         _ = webView.CoreWebView2.ExecuteScriptAsync(
@@ -330,10 +423,13 @@ namespace Launcher
 
                 var json = JsonSerializer.Serialize(new { type = "mod_downloaded", projectId });
                 webView.CoreWebView2.PostWebMessageAsJson(json);
+                
+                UpdateStatus($"Мод загружен: {file.Filename}");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ERR] DownloadMod: {ex.Message}");
+                UpdateStatus($"Ошибка загрузки мода");
             }
         }
 
@@ -341,7 +437,11 @@ namespace Launcher
         {
             try
             {
-                if (session == null) return;
+                if (session == null)
+                {
+                    UpdateStatus("Ошибка: Требуется авторизация");
+                    return;
+                }
 
                 var instancePath = Path.Combine(instancesPath, instanceName);
                 var version = await SafeReadFileAsync(Path.Combine(instancePath, "version.txt"), "1.20.4");
@@ -349,29 +449,35 @@ namespace Launcher
                 var gamePath = new MinecraftPath(instancePath);
                 var launcher = new MinecraftLauncher(gamePath);
 
+                UpdateStatus($"Запуск {instanceName}...");
+
                 launcher.FileProgressChanged += (s, args) =>
                 {
                     Dispatcher.Invoke(async () =>
                     {
                         double percent = args.TotalTasks > 0 ? (double)(args.ProgressedTasks * 100) / args.TotalTasks : 0;
                         await webView.CoreWebView2.ExecuteScriptAsync($"updateProgress({percent}, '{args.Name}')");
+                        UpdateStatus($"Загрузка: {args.Name} ({percent:F1}%)");
                     });
                 };
 
                 var launchOption = new MLaunchOption
                 {
-                    MaximumRamMb = 2048,
+                    MaximumRamMb = 4096, // Увеличили до 4GB
                     Session = session
                 };
 
-                await webView.CoreWebView2.ExecuteScriptAsync("updateStatus('Загрузка файлов...'); document.getElementById('progressContainer').style.display = 'block';");
+                await webView.CoreWebView2.ExecuteScriptAsync("updateStatus('Загрузка файлов игры...'); document.getElementById('progressContainer').style.display = 'block';");
 
                 var process = await launcher.InstallAndBuildProcessAsync(version, launchOption);
                 process.Start();
+                
+                UpdateStatus($"Minecraft запущен: {instanceName}");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ERR] Launch: {ex.Message}");
+                UpdateStatus($"Ошибка запуска: {ex.Message}");
             }
         }
     }

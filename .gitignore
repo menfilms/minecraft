@@ -1,66 +1,23 @@
 ```
 # Build artifacts
-*.o
-*.obj
-*.exe
 *.dll
-*.so
-*.a
-*.out
+*.exe
+*.pdb
+*.userprefs
+*.cache
+bin/
+obj/
+Debug/
+Release/
 
 # Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-target/
-.gradle/
+packages/
 
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs and temp files
+# Logs
 *.log
-*.tmp
 
-# System files
-.DS_Store
-Thumbs.db
-.env
-.env.local
-*.env.*
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# User-specific files
+.vs/
+*.user
+*.suo
 ```
