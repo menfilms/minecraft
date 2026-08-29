@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mentiz Launcher</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            background: #0f0f10; 
+            color: #e0e0e0; 
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* Навигация */
+        .nav { 
+            background: #18181b; 
+            padding: 0 20px; 
+            display: flex; 
+            gap: 5px; 
+            border-bottom: 1px solid #27272a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav button { 
+            background: transparent; 
+            border: none; 
+            color: #a1a1aa; 
+            padding: 16px 24px; 
+            cursor: pointer; 
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .nav button:hover { color: #fff; background: #18181b; }
+        .nav button.active { 
+            color: #00ffa3;
+            border-bottom-color: #00ffa3;
+            background: #0f0f10;
+        }
+        
+        /* Контейнер */
+        .container { max-width: 1280px; margin: 0 auto; padding: 40px 20px; }
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        h1 { font-size: 32px; margin-bottom: 30px; color: #fff; font-weight: 700; letter-spacing: -0.5px; }
+        h2 { font-size: 22px; margin-bottom: 20px; color: #fff; font-weight: 600; }
+        h3 { font-size: 18px; color: #fff; font-weight: 600; }
+        
+        /* Карточки */
+        .card { 
+            background: #18181b; 
+            border-radius: 12px; 
+            padding: 24px;
+            border: 1px solid #27272a;
+            margin-bottom: 24px;
+        }
+        
+        /* Формы */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #a1a1aa;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        input, select { 
+            width: 100%;
+            padding: 11px 14px; 
+            border: 1px solid #27272a; 
+            border-radius: 8px; 
+            background: #0f0f10; 
+            color: #e0e0e0;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: #00ffa3;
+            box-shadow: 0 0 0 3px rgba(0, 255, 163, 0.1);
+        }
+        
+        /* Кнопки */
+        button { 
+            padding: 11px 20px; 
+            cursor: pointer; 
+            background: #00ffa3; 
+            color: #0f0f10; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        button:hover { 
+            background: #00e694;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 255, 163, 0.3);
+        }
+        button:active { transform: translateY(0); }
+        button:disabled { 
+            background: #27272a; 
+            color: #71717a;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        button.secondary { 
+            background: #27272a;
+            color: #e0e0e0;
+        }
+        button.secondary:hover { background: #3f3f46; }
+        button.danger { 
+            background: #ef4444;
+            color: #fff;
+        }
+        button.danger:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        button.installed { 
+            background: #00ffa3; 
+            color: #0f0f10;
+        }
+        button.small { padding: 7px 14px; font-size: 13px; }
+        
+        /* Сетка инстансов */
+        .instances-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
+            gap: 20px; 
+        }
+        .instance-card { 
+            background: #18181b; 
+            border-radius: 12px; 
+            padding: 24px;
+            border: 1px solid #27272a;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .instance-card:hover { 
+            border-color: #00ffa3;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 255, 163, 0.15);
+        }
+        .instance-card h3 { 
+            margin-bottom: 12px; 
+            color: #00ffa3;
+            font-size: 20px;
+        }
+        .instance-card p { 
+            color: #a1a1aa; 
+            font-size: 14px; 
+            margin-bottom: 8px;
+        }
+        .instance-card .actions { 
+            margin-top: 20px; 
+            display: flex; 
+            gap: 10px; 
+        }
+        .instance-card .actions button { flex: 1; font-size: 14px; }
+        
+        /* Поиск */
+        .search-row { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 24px; 
+        }
+        .search-row input { 
+            flex: 1;
+            font-size: 16px;
+        }
+        .search-row button {
+            padding: 11px 28px;
+        }
+        
+        #searchStatus { color: #71717a; font-size: 14px; margin-bottom: 20px; }
+        
+        /* Список модов - стиль Modrinth */
+        #modsList { display: flex; flex-direction: column; gap: 12px; }
+        
+        .mod-item { 
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .mod-item:hover {
+            border-color: #3f3f46;
+            background: #1c1c1f;
+            transform: translateX(4px);
+        }
+        
+        .mod-icon { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 10px; 
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #0f0f10;
+        }
+        
+        .icon-placeholder { 
+            width: 56px; 
+            height: 56px; 
+            background: linear-gradient(135deg, #18181b, #27272a);
+            border-radius: 10px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #00ffa3; 
+            font-size: 24px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .mod-info { flex: 1; min-width: 0; }
+        .mod-title { 
+            font-size: 18px; 
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .mod-author {
+            font-size: 14px;
+            color: #00ffa3;
+            margin-bottom: 8px;
+        }
+        .mod-desc { 
+            font-size: 15px; 
+            color: #a1a1aa;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        .mod-meta { 
+            font-size: 13px; 
+            color: #71717a;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .mod-actions { 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 140px;
+        }
+        
+        .download-progress {
+            width: 100%;
+            height: 6px;
+            background: #27272a;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .download-progress-bar {
+            height: 100%;
+            background: #00ffa3;
+            transition: width 0.3s;
+        }
+        
+        /* Пагинация */
+        .pagination { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 30px; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .pagination button { padding: 10px 18px; }
+        .pagination span { color: #71717a; font-size: 14px; }
+        
+        /* Статус бар */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #18181b;
+            border-top: 1px solid #27272a;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+        }
+        
+        .status-text { color: #a1a1aa; font-size: 14px; min-width: 200px; }
+        
+        .progress-container { 
+            flex: 1;
+            max-width: 400px;
+            height: 8px;
+            background: #27272a;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar { 
+            height: 100%;
+            background: #00ffa3;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* Модальное окно */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+        .modal-overlay.active { display: flex; justify-content: center; }
+        
+        .modal {
+            background: #18181b;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid #27272a;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #0f0f10;
+        }
+        
+        .modal-title-section {
+            flex: 1;
+        }
+        
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        
+        .modal-author {
+            font-size: 15px;
+            color: #00ffa3;
+            margin-bottom: 12px;
+        }
+        
+        .modal-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #71717a;
+        }
+        
+        .modal-close {
+            background: #27272a;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: #a1a1aa;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover { background: #3f3f46; color: #fff; }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-section {
+            margin-bottom: 30px;
+        }
+        
+        .modal-section h3 {
+            margin-bottom: 16px;
+            color: #fff;
+            font-size: 18px;
+        }
+        
+        .modal-description {
+            color: #d4d4d8;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        
+        /* Галерея */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 16/9;
+            background: #0f0f10;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .gallery-item:hover {
+            border-color: #00ffa3;
+            transform: scale(1.05);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Список установленных модов */
+        .installed-mod-item {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .installed-mod-item.disabled {
+            opacity: 0.6;
+            border-color: #3f3f46;
+        }
+        
+        .installed-mod-info {
+            flex: 1;
+        }
+        .installed-mod-name {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .installed-mod-filename {
+            font-size: 13px;
+            color: #71717a;
+        }
+        
+        .installed-mod-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .toggle-btn {
+            background: #3f3f46;
+            color: #fff;
+        }
+        .toggle-btn.active {
+            background: #00ffa3;
+            color: #0f0f10;
+        }
+        
+        /* Табы */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #27272a;
+            padding-bottom: 12px;
+        }
+        .tab {
+            background: transparent;
+            border: none;
+            color: #71717a;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+        .tab:hover { color: #fff; background: #27272a; }
+        .tab.active {
+            color: #00ffa3;
+            background: rgba(0, 255, 163, 0.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #71717a;
+        }
+        .empty-state h3 {
+            color: #a1a1aa;
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+        
+        /* Утилиты */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #27272a;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #a1a1aa;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <button id="navInstances" class="active" onclick="showPage('instances')">Инстансы</button>
+        <button id="navMods" onclick="showPage('mods')">Моды</button>
+        <button id="navSettings" onclick="showPage('settings')">Настройки</button>
+    </div>
+
+    <div class="container">
+        <!-- Страница инстансов -->
+        <div id="pageInstances" class="page active">
+            <h1>Мои инстансы</h1>
+            
+            <div class="card">
+                <h2>Создать новый инстанс</h2>
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="newInstanceName" placeholder="Например: My Modpack">
+                </div>
+                <div class="form-group">
+                    <label>Версия Minecraft</label>
+                    <select id="newInstanceVersion">
+                        <option value="1.21.1">1.21.1</option>
+                        <option value="1.21">1.21</option>
+                        <option value="1.20.4">1.20.4</option>
+                        <option value="1.20.1">1.20.1</option>
+                        <option value="1.19.2">1.19.2</option>
+                        <option value="1.18.2">1.18.2</option>
+                        <option value="1.16.5">1.16.5</option>
+                        <option value="1.12.2">1.12.2</option>
+                        <option value="1.8.9">1.8.9</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Загрузчик</label>
+                    <select id="newInstanceLoader">
+                        <option value="fabric">Fabric</option>
+                        <option value="forge">Forge</option>
+                        <option value="neoforge">NeoForge</option>
+                        <option value="vanilla">Vanilla</option>
+                    </select>
+                </div>
+                <button onclick="createInstance()">Создать инстанс</button>
+            </div>
+            
+            <h2>Существующие инстансы</h2>
+            <div id="instancesList" class="instances-grid"></div>
+        </div>
+
+        <!-- Страница модов -->
+        <div id="pageMods" class="page">
+            <h1>Моды</h1>
+            
+            <div class="card">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Инстанс для установки модов</label>
+                    <select id="selectedInstance"></select>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('search')">Поиск</button>
+                <button class="tab" onclick="switchTab('installed')">Установленные моды</button>
+            </div>
+            
+            <div id="tabSearch">
+                <div class="search-row">
+                    <input type="text" id="searchInput" placeholder="Поиск модов (оставьте пустым для популярных)...">
+                    <button onclick="doSearch()">Поиск</button>
+                </div>
+                <div id="searchStatus"></div>
+                <div id="modsList"></div>
+                <div class="pagination" id="pagination" style="display: none;">
+                    <button id="prevBtn" onclick="prevPage()">&lt;- Назад</button>
+                    <span id="pageInfo">Страница 1</span>
+                    <button id="nextBtn" onclick="nextPage()">Вперед -&gt;</button>
+                </div>
+            </div>
+            
+            <div id="tabInstalled" style="display: none;">
+                <div id="installedModsList"></div>
+            </div>
+        </div>
+
+        <!-- Страница настроек -->
+        <div id="pageSettings" class="page">
+            <h1>Настройки</h1>
+            <div class="card">
+                <div class="form-group">
+                    <label>Никнейм</label>
+                    <input type="text" id="username" placeholder="Ник" value="Mentiz">
+                </div>
+                <button onclick="login()">Войти</button>
+                <p id="nickname" style="margin-top: 15px; color: #00ffa3;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для просмотра мода -->
+    <div class="modal-overlay" id="modModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <img class="modal-icon" id="modalIcon" src="" alt="">
+                <div class="modal-title-section">
+                    <h2 class="modal-title" id="modalTitle"></h2>
+                    <div class="modal-author" id="modalAuthor"></div>
+                    <div class="modal-stats" id="modalStats"></div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Описание</h3>
+                    <div class="modal-description" id="modalDescription"></div>
+                </div>
+                <div class="modal-section">
+                    <h3>Галерея</h3>
+                    <div class="gallery" id="modalGallery"></div>
+                </div>
+                <div class="modal-section">
+                    <h3>Информация</h3>
+                    <div class="modal-description" id="modalInfo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span class="status-text" id="status">Готов</span>
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("=== SCRIPT STARTED ===");
+        
+        var downloadingMods = {};
+        var currentPage = 0;
+        var currentQuery = "";
+        var totalHits = 0;
+        var ITEMS_PER_PAGE = 20;
+        var instances = [];
+        var currentInstance = "";
+        var installedMods = {};
+        var currentTab = "search";
+        var currentModData = null;
+
+        window.chrome.webview.addEventListener("message", function(event) {
+            console.log("Message from C#:", event.data);
+            try {
+                var data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+                
+                if (data.type === "mods_result") {
+                    onModsSearchComplete(data.mods, data.total);
+                } else if (data.type === "mod_details") {
+                    onModDetailsLoaded(data.mod);
+                } else if (data.type === "mod_downloaded") {
+                    onModDownloaded(data.projectId);
+                } else if (data.type === "instances_list") {
+                    onInstancesLoaded(data.instances);
+                } else if (data.type === "instance_created") {
+                    onInstanceCreated();
+                } else if (data.type === "download_progress") {
+                    onDownloadProgress(data.projectId, data.progress);
+                } else if (data.type === "installed_mods") {
+                    onInstalledModsLoaded(data.instanceName, data.mods);
+                } else if (data.type === "mod_deleted") {
+                    onModDeleted(data.projectId);
+                } else if (data.type === "mod_toggled") {
+                    onModToggled(data.projectId, data.enabled);
+                }
+            } catch (err) {
+                console.error("Parse error:", err);
+            }
+        });
+
+        function showPage(pageName) {
+            document.querySelectorAll(".page").forEach(function(p) { p.classList.remove("active"); });
+            document.querySelectorAll(".nav button").forEach(function(b) { b.classList.remove("active"); });
+            
+            document.getElementById("page" + pageName.charAt(0).toUpperCase() + pageName.slice(1)).classList.add("active");
+            document.getElementById("nav" + pageName.charAt(0).toUpperCase() + pageName.slice(1)).classList.add("active");
+            
+            if (pageName === "instances") {
+                loadInstances();
+            } else if (pageName === "mods") {
+                updateInstanceSelect();
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
+            event.target.classList.add("active");
+            
+            if (tab === "search") {
+                document.getElementById("tabSearch").style.display = "block";
+                document.getElementById("tabInstalled").style.display = "none";
+            } else {
+                document.getElementById("tabSearch").style.display = "none";
+                document.getElementById("tabInstalled").style.display = "block";
+                loadInstalledModsList();
+            }
+        }
+
+        function loadInstances() {
+            window.chrome.webview.postMessage("get_instances");
+        }
+
+        function createInstance() {
+            var name = document.getElementById("newInstanceName").value.trim();
+            var version = document.getElementById("newInstanceVersion").value;
+            var loader = document.getElementById("newInstanceLoader").value;
+            
+            if (!name) {
+                updateStatus("Введите название инстанса");
+                return;
+            }
+            
+            window.chrome.webview.postMessage("create_instance:" + name + ":" + version + ":" + loader);
+        }
+
+        function deleteInstance(name) {
+            if (confirm("Удалить инстанс \"" + name + "\"?")) {
+                window.chrome.webview.postMessage("delete_instance:" + name);
+            }
+        }
+
+        function launchInstance(name) {
+            updateStatus("Запуск " + name + "...");
+            window.chrome.webview.postMessage("launch:" + name);
+        }
+
+        function onInstancesLoaded(instancesList) {
+            console.log("Instances loaded:", instancesList);
+            instances = instancesList;
+            renderInstances();
+            updateInstanceSelect();
+        }
+
+        function onInstanceCreated() {
+            document.getElementById("newInstanceName").value = "";
+            loadInstances();
+            updateStatus("Инстанс создан");
+        }
+
+        function renderInstances() {
+            var list = document.getElementById("instancesList");
+            
+            if (instances.length === 0) {
+                list.innerHTML = "<div class='empty-state'><h3>Нет инстансов</h3><p>Создайте первый инстанс выше</p></div>";
+                return;
+            }
+            
+            var html = "";
+            instances.forEach(function(inst) {
+                html += "<div class='instance-card' onclick='selectInstanceForMods(\"" + inst.name + "\")'>";
+                html += "<h3>" + escapeHtml(inst.name) + "</h3>";
+                html += "<p>Версия: " + escapeHtml(inst.version) + "</p>";
+                html += "<p>Загрузчик: " + escapeHtml(inst.loader) + "</p>";
+                html += "<p>Модов: " + (inst.modCount || 0) + "</p>";
+                html += "<div class='actions' onclick='event.stopPropagation()'>";
+                html += "<button onclick='launchInstance(\"" + inst.name + "\")'>Играть</button>";
+                html += "<button class='secondary' onclick='selectInstanceForMods(\"" + inst.name + "\")'>Управление</button>";
+                html += "<button class='danger' onclick='deleteInstance(\"" + inst.name + "\")'>Удалить</button>";
+                html += "</div>";
+                html += "</div>";
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function updateInstanceSelect() {
+            var select = document.getElementById("selectedInstance");
+            if (instances.length === 0) {
+                select.innerHTML = "<option value=''>Сначала создайте инстанс</option>";
+                return;
+            }
+            
+            var html = "";
+            instances.forEach(function(inst) {
+                html += "<option value='" + inst.name + "'>" + inst.name + " (" + inst.version + " " + inst.loader + ")</option>";
+            });
+            select.innerHTML = html;
+            
+            if (instances.length > 0) {
+                currentInstance = instances[0].name;
+                loadInstalledMods(currentInstance);
+            }
+        }
+
+        function loadInstalledMods(instanceName) {
+            window.chrome.webview.postMessage("get_installed_mods:" + instanceName);
+        }
+
+        function loadInstalledModsList() {
+            var mods = installedMods[currentInstance] || [];
+            renderInstalledModsList(mods);
+        }
+
+        function onInstalledModsLoaded(instanceName, mods) {
+            console.log("Installed mods for " + instanceName + ":", mods);
+            installedMods[instanceName] = mods || [];
+            
+            if (currentInstance === instanceName) {
+                if (currentTab === "installed") {
+                    renderInstalledModsList(mods);
+                } else if (currentQuery || currentPage === 0) {
+                    doSearch();
+                }
+            }
+        }
+
+        function renderInstalledModsList(mods) {
+            var list = document.getElementById("installedModsList");
+            
+            if (!mods || mods.length === 0) {
+                list.innerHTML = "<div class='empty-state'><h3>Нет установленных модов</h3><p>Установите моды через поиск</p></div>";
+                return;
+            }
+            
+            var html = "<h2>Установленные моды (" + mods.length + ")</h2>";
+            mods.forEach(function(mod) {
+                html += "<div class='installed-mod-item" + (mod.disabled ? " disabled" : "") + "'>";
+                html += "<div class='installed-mod-info'>";
+                html += "<div class='installed-mod-name'>" + escapeHtml(mod.name) + "</div>";
+                html += "<div class='installed-mod-filename'>" + escapeHtml(mod.filename) + "</div>";
+                html += "</div>";
+                html += "<div class='installed-mod-actions'>";
+                html += "<button class='small toggle-btn" + (mod.disabled ? "" : " active") + "' onclick='toggleMod(\"" + mod.filename + "\", " + (mod.disabled ? "true" : "false") + ")'>" + (mod.disabled ? "Включить" : "Отключить") + "</button>";
+                html += "<button class='small danger' onclick='deleteMod(\"" + mod.filename + "\")'>Удалить</button>";
+                html += "</div>";
+                html += "</div>";
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function deleteMod(filename) {
+            if (confirm("Удалить мод \"" + filename + "\"?")) {
+                window.chrome.webview.postMessage("delete_mod:" + currentInstance + ":" + filename);
+            }
+        }
+
+        function toggleMod(filename, enable) {
+            window.chrome.webview.postMessage("toggle_mod:" + currentInstance + ":" + filename + ":" + enable);
+        }
+
+        function onModDeleted(projectId) {
+            loadInstalledMods(currentInstance);
+            loadInstances();
+            updateStatus("Мод удалён");
+        }
+
+        function onModToggled(projectId, enabled) {
+            loadInstalledMods(currentInstance);
+            updateStatus(enabled ? "Мод включён" : "Мод отключён");
+        }
+
+        function selectInstanceForMods(name) {
+            document.getElementById("selectedInstance").value = name;
+            currentInstance = name;
+            loadInstalledMods(name);
+            showPage("mods");
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter" || event.keyCode === 13) {
+                doSearch();
+            }
+        }
+
+        function doSearch() {
+            var query = document.getElementById("searchInput").value.trim();
+            var instanceName = document.getElementById("selectedInstance").value;
+            
+            if (!instanceName) {
+                updateStatus("Выберите инстанс");
+                return;
+            }
+            
+            currentInstance = instanceName;
+            currentQuery = query;
+            currentPage = 0;
+            updateStatus(query ? "Поиск..." : "Загрузка популярных модов...");
+            
+            var version = getVersionFromInstance(instanceName);
+            var msg = "search_mods:" + query + ":" + version + ":0:" + ITEMS_PER_PAGE;
+            window.chrome.webview.postMessage(msg);
+        }
+
+        function nextPage() {
+            if ((currentPage + 1) * ITEMS_PER_PAGE < totalHits) {
+                currentPage++;
+                var version = getVersionFromInstance(currentInstance);
+                var msg = "search_mods:" + currentQuery + ":" + version + ":" + (currentPage * ITEMS_PER_PAGE) + ":" + ITEMS_PER_PAGE;
+                window.chrome.webview.postMessage(msg);
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                var version = getVersionFromInstance(currentInstance);
+                var msg = "search_mods:" + currentQuery + ":" + version + ":" + (currentPage * ITEMS_PER_PAGE) + ":" + ITEMS_PER_PAGE;
+                window.chrome.webview.postMessage(msg);
+            }
+        }
+
+        function onModsSearchComplete(mods, total) {
+            totalHits = total;
+            renderMods(mods, total);
+        }
+
+        function renderMods(mods, total) {
+            var list = document.getElementById("modsList");
+            var pagination = document.getElementById("pagination");
+            var totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+            
+            document.getElementById("pageInfo").innerText = "Страница " + (currentPage + 1) + " из " + Math.max(1, totalPages);
+            document.getElementById("prevBtn").disabled = currentPage === 0;
+            document.getElementById("nextBtn").disabled = (currentPage + 1) * ITEMS_PER_PAGE >= total;
+            
+            list.innerHTML = "";
+            
+            if (!mods || mods.length === 0) {
+                list.innerHTML = "<div class='empty-state'><h3>Моды не найдены</h3></div>";
+                pagination.style.display = "none";
+                return;
+            }
+            
+            var installedList = installedMods[currentInstance] || [];
+            
+            mods.forEach(function(mod) {
+                var isInstalled = installedList.some(function(m) { return m.project_id === mod.project_id; });
+                var isDownloading = downloadingMods[mod.project_id] !== undefined;
+                
+                var div = document.createElement("div");
+                div.className = "mod-item";
+                div.onclick = function() { openModDetails(mod.project_id); };
+                
+                if (mod.icon_url) {
+                    var img = document.createElement("img");
+                    img.className = "mod-icon";
+                    img.src = mod.icon_url;
+                    img.onerror = function() {
+                        this.style.display = "none";
+                        var placeholder = document.createElement("div");
+                        placeholder.className = "icon-placeholder";
+                        placeholder.textContent = (mod.title || "?").charAt(0).toUpperCase();
+                        div.insertBefore(placeholder, div.firstChild);
+                    };
+                    div.appendChild(img);
+                } else {
+                    var placeholder = document.createElement("div");
+                    placeholder.className = "icon-placeholder";
+                    placeholder.textContent = (mod.title || "?").charAt(0).toUpperCase();
+                    div.appendChild(placeholder);
+                }
+                
+                var info = document.createElement("div");
+                info.className = "mod-info";
+                
+                var title = document.createElement("div");
+                title.className = "mod-title";
+                title.textContent = mod.title || "No name";
+                info.appendChild(title);
+                
+                var desc = document.createElement("div");
+                desc.className = "mod-desc";
+                desc.textContent = mod.description || "No description";
+                info.appendChild(desc);
+                
+                var meta = document.createElement("div");
+                meta.className = "mod-meta";
+                meta.textContent = (mod.downloads || 0).toLocaleString() + " загрузок";
+                info.appendChild(meta);
+                
+                div.appendChild(info);
+                
+                var actions = document.createElement("div");
+                actions.className = "mod-actions";
+                actions.onclick = function(e) { e.stopPropagation(); };
+                
+                var btn = document.createElement("button");
+                
+                if (isInstalled) {
+                    btn.textContent = "✓ Установлен";
+                    btn.className = "installed";
+                    btn.disabled = true;
+                } else if (isDownloading) {
+                    btn.textContent = Math.round(downloadingMods[mod.project_id]) + "%";
+                    btn.className = "secondary";
+                    btn.disabled = true;
+                    
+                    var progress = document.createElement("div");
+                    progress.className = "download-progress";
+                    var progressBar = document.createElement("div");
+                    progressBar.className = "download-progress-bar";
+                    progressBar.style.width = downloadingMods[mod.project_id] + "%";
+                    progress.appendChild(progressBar);
+                    actions.appendChild(btn);
+                    actions.appendChild(progress);
+                } else {
+                    btn.textContent = "Установить";
+                    btn.className = "";
+                    (function(pid) {
+                        btn.onclick = function() {
+                            downloadMod(pid);
+                        };
+                    })(mod.project_id);
+                    actions.appendChild(btn);
+                }
+                
+                div.appendChild(actions);
+                list.appendChild(div);
+            });
+            
+            pagination.style.display = "flex";
+            updateStatus("Найдено: " + total);
+        }
+
+        function openModDetails(projectId) {
+            updateStatus("Загрузка информации...");
+            window.chrome.webview.postMessage("get_mod_details:" + projectId);
+        }
+
+        function onModDetailsLoaded(mod) {
+            currentModData = mod;
+            
+            document.getElementById("modalTitle").textContent = mod.title || "No name";
+            document.getElementById("modalAuthor").textContent = mod.author || "Unknown author";
+            document.getElementById("modalDescription").textContent = mod.description || "No description";
+            document.getElementById("modalStats").textContent = 
+                (mod.downloads || 0).toLocaleString() + " загрузок • " + 
+                (mod.followers || 0).toLocaleString() + " подписчиков";
+            
+            if (mod.icon_url) {
+                document.getElementById("modalIcon").src = mod.icon_url;
+                document.getElementById("modalIcon").style.display = "block";
+            } else {
+                document.getElementById("modalIcon").style.display = "none";
+            }
+            
+            // Галерея
+            var gallery = document.getElementById("modalGallery");
+            gallery.innerHTML = "";
+            if (mod.gallery && mod.gallery.length > 0) {
+                mod.gallery.forEach(function(img) {
+                    var div = document.createElement("div");
+                    div.className = "gallery-item";
+                    var imgEl = document.createElement("img");
+                    imgEl.src = img;
+                    div.appendChild(imgEl);
+                    gallery.appendChild(div);
+                });
+            } else {
+                gallery.innerHTML = "<p style='color: #71717a;'>Нет изображений</p>";
+            }
+            
+            // Информация
+            var info = document.getElementById("modalInfo");
+            info.innerHTML = "Версия: " + (mod.version || "N/A") + "<br>" +
+                           "Загрузчик: " + (mod.loader || "Any") + "<br>" +
+                           "ID: " + mod.project_id;
+            
+            document.getElementById("modModal").classList.add("active");
+        }
+
+        function closeModal() {
+            document.getElementById("modModal").classList.remove("active");
+        }
+
+        function closeModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeModal();
+            }
+        }
+
+        function downloadMod(projectId) {
+            var instanceName = currentInstance;
+            var version = getVersionFromInstance(instanceName);
+            var loader = getLoaderFromInstance(instanceName);
+            var msg = "download_mod:" + projectId + ":" + version + ":" + instanceName + ":" + loader;
+            
+            downloadingMods[projectId] = 0;
+            updateStatus("Загрузка мода...");
+            
+            doSearch();
+            
+            window.chrome.webview.postMessage(msg);
+        }
+
+        function onDownloadProgress(projectId, progress) {
+            downloadingMods[projectId] = progress;
+            
+            var btns = document.querySelectorAll(".mod-actions button.secondary");
+            btns.forEach(function(btn) {
+                if (btn.textContent.indexOf("%") !== -1) {
+                    btn.textContent = Math.round(progress) + "%";
+                    var progressDiv = btn.nextElementSibling;
+                    if (progressDiv && progressDiv.className === "download-progress") {
+                        var bar = progressDiv.querySelector(".download-progress-bar");
+                        if (bar) bar.style.width = progress + "%";
+                    }
+                }
+            });
+        }
+
+        function onModDownloaded(projectId) {
+            delete downloadingMods[projectId];
+            loadInstalledMods(currentInstance);
+            loadInstances();
+            updateStatus("Мод установлен");
+            if (currentModData && currentModData.project_id === projectId) {
+                closeModal();
+            }
+        }
+
+        function getVersionFromInstance(name) {
+            var inst = instances.find(function(i) { return i.name === name; });
+            return inst ? inst.version : "1.20.4";
+        }
+
+        function getLoaderFromInstance(name) {
+            var inst = instances.find(function(i) { return i.name === name; });
+            return inst ? inst.loader : "fabric";
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function login() {
+            var name = document.getElementById("username").value;
+            window.chrome.webview.postMessage("login:" + name);
+        }
+
+        function onAuthSuccess(name) {
+            updateStatus("Вход выполнен: " + name);
+            document.getElementById("nickname").textContent = "Ник: " + name;
+        }
+
+        function updateStatus(text) {
+            document.getElementById("status").textContent = text;
+        }
+
+        function updateProgress(percent, task) {
+            var container = document.getElementById("progressContainer");
+            var bar = document.getElementById("progressBar");
+            container.style.display = "block";
+            bar.style.width = percent + "%";
+            if (task) updateStatus(task);
+        }
+
+        document.getElementById("searchInput").addEventListener("keypress", handleKeyPress);
+        document.getElementById("selectedInstance").addEventListener("change", function() {
+            currentInstance = this.value;
+            loadInstalledMods(currentInstance);
+        });
+        
+        loadInstances();
+        
+        console.log("=== SCRIPT INITIALIZED ===");
+    </script>
+</body>
+</html>
